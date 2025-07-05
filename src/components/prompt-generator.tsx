@@ -230,40 +230,43 @@ export default function PromptGenerator() {
                               <Loader2 className="h-8 w-8 animate-spin text-primary" />
                               <span className="text-muted-foreground font-semibold">Generating...</span>
                             </div>
-                          ) : item.prompt ? (
-                            <div className="space-y-3 flex-grow flex flex-col">
-                              <Label className="text-base font-semibold flex items-center gap-2 text-foreground/90">
-                                <Wand2 className="h-5 w-5 text-primary" />
-                                Generated Prompt
-                              </Label>
-                              <div className="relative flex-grow">
-                                <Textarea
-                                  readOnly
-                                  value={item.prompt}
-                                  className="pr-10 bg-secondary/50 h-full resize-none text-sm"
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-foreground"
-                                  onClick={() => copyToClipboard(item.id, item.prompt!)}
-                                >
-                                  {copiedId === item.id ? <Check className="h-4 w-4 text-accent" /> : <Clipboard className="h-4 w-4" />}
-                                </Button>
-                              </div>
-                            </div>
                           ) : (
-                            <div className="flex flex-col justify-center items-center h-full text-center">
-                                <p className="text-muted-foreground mb-4 flex-grow flex items-center">Your generated prompt will appear here.</p>
-                                <Button
-                                  onClick={() => handleGeneratePrompt(item.id)}
-                                  disabled={isProcessing}
-                                  className="w-full"
-                                  size="lg"
-                                >
-                                  <Wand2 className="mr-2 h-5 w-5" />
-                                  Generate Prompt
-                                </Button>
+                            <div className="flex-grow flex flex-col justify-between h-full">
+                                <div className="space-y-3 flex-grow flex flex-col">
+                                  <Label className="text-base font-semibold flex items-center gap-2 text-foreground/90">
+                                    <Wand2 className="h-5 w-5 text-primary" />
+                                    Generated Prompt
+                                  </Label>
+                                  <div className="relative flex-grow">
+                                    <Textarea
+                                      readOnly
+                                      value={item.prompt || ''}
+                                      placeholder="Your generated prompt will appear here."
+                                      className="pr-10 bg-secondary/50 h-full resize-none text-sm"
+                                    />
+                                    {item.prompt && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                                        onClick={() => copyToClipboard(item.id, item.prompt!)}
+                                      >
+                                        {copiedId === item.id ? <Check className="h-4 w-4 text-accent" /> : <Clipboard className="h-4 w-4" />}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                                {!item.prompt && (
+                                  <Button
+                                    onClick={() => handleGeneratePrompt(item.id)}
+                                    disabled={isProcessing}
+                                    className="w-full mt-4"
+                                    size="lg"
+                                  >
+                                    <Wand2 className="mr-2 h-5 w-5" />
+                                    Generate Prompt
+                                  </Button>
+                                )}
                             </div>
                           )}
                           {item.error && (
