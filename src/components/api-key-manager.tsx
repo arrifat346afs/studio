@@ -25,6 +25,8 @@ export default function ApiKeyManager() {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
     if (storedApiKey) {
       setApiKey(storedApiKey);
+    } else {
+      setIsOpen(true);
     }
   }, []);
 
@@ -45,7 +47,7 @@ export default function ApiKeyManager() {
         <DialogHeader>
           <DialogTitle>API Key Management</DialogTitle>
           <DialogDescription>
-            Manage your Gemini API key here. Your key is stored securely in your browser and is not sent to our servers. For this demo, prompts are generated using a server-side key.
+            Manage your Gemini API key here. While this demo includes a server-side key for initial use, providing your own key ensures uninterrupted access. Your key is stored securely in your browser.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
