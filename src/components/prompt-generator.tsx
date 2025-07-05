@@ -23,6 +23,8 @@ type ImageItem = {
   error?: string;
 };
 
+const API_KEY_STORAGE_KEY = 'promptify-api-key';
+
 export default function PromptGenerator() {
   const [urlInput, setUrlInput] = useState('');
   const [imageItems, setImageItems] = useState<ImageItem[]>([]);
@@ -75,7 +77,8 @@ export default function PromptGenerator() {
       if (!itemToProcess) return;
 
       try {
-        const result = await generateImagePrompt({ imageUrl: itemToProcess.url });
+        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+        const result = await generateImagePrompt({ imageUrl: itemToProcess.url, apiKey: apiKey || undefined });
         setImageItems(prev =>
           prev.map(item =>
             item.id === id ? { ...item, prompt: result.prompt, tags: result.tags, isGenerating: false } : item
@@ -104,12 +107,13 @@ export default function PromptGenerator() {
         prev.map(item => item.isValid && !item.prompt ? { ...item, isGenerating: true, error: undefined } : item)
       );
 
+      const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
       const itemsToProcess = imageItems.filter(item => item.isValid && !item.prompt);
 
       const results = await Promise.all(
         itemsToProcess.map(async (item) => {
           try {
-            const result = await generateImagePrompt({ imageUrl: item.url });
+            const result = await generateImagePrompt({ imageUrl: item.url, apiKey: apiKey || undefined });
             return { id: item.id, prompt: result.prompt, tags: result.tags, error: undefined };
           } catch (error) {
             console.error(`Error generating prompt for ${item.url}:`, error);
