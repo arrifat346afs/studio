@@ -203,8 +203,8 @@ export default function PromptGenerator() {
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
                 <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
-                  <Card className="group relative overflow-hidden rounded-xl border-border/50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 w-full flex flex-col">
-                    <CardHeader className="p-0 border-b relative h-[220px] overflow-hidden">
+                  <Card className="group relative overflow-hidden rounded-xl bg-card border border-border/20 shadow-lg transition-all duration-300 hover:shadow-primary/20 hover:-translate-y-1 w-full flex flex-col">
+                    <CardHeader className="p-0 border-b border-border/20 relative h-[220px] overflow-hidden">
                       {item.isValid ? (
                         <Image
                           src={item.url}
@@ -222,27 +222,28 @@ export default function PromptGenerator() {
                       )}
                     </CardHeader>
 
-                    <CardContent className="p-4 sm:p-6 flex flex-col flex-grow min-h-[240px]">
+                    <CardContent className="p-4 flex flex-col flex-grow">
                       {item.isValid ? (
-                        <div className="flex-grow flex flex-col justify-between">
+                        <div className="flex-grow flex flex-col justify-between gap-4">
                           {item.isGenerating ? (
-                            <div className="flex flex-col items-center justify-center flex-grow space-y-3">
+                            <div className="flex flex-col items-center justify-center flex-grow space-y-3 min-h-[180px]">
                               <Loader2 className="h-8 w-8 animate-spin text-primary" />
                               <span className="text-muted-foreground font-semibold">Generating...</span>
                             </div>
                           ) : (
-                            <div className="flex-grow flex flex-col justify-between h-full">
-                                <div className="space-y-3 flex-grow flex flex-col">
-                                  <Label className="text-base font-semibold flex items-center gap-2 text-foreground/90">
-                                    <Wand2 className="h-5 w-5 text-primary" />
+                            <div className="flex flex-col flex-grow justify-between min-h-[180px]">
+                                <div className="space-y-2 flex-grow flex flex-col">
+                                  <Label htmlFor={`prompt-${item.id}`} className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
+                                    <Wand2 className="h-4 w-4" />
                                     Generated Prompt
                                   </Label>
                                   <div className="relative flex-grow">
                                     <Textarea
+                                      id={`prompt-${item.id}`}
                                       readOnly
                                       value={item.prompt || ''}
-                                      placeholder="Your generated prompt will appear here."
-                                      className="pr-10 bg-secondary/50 h-full resize-none text-sm"
+                                      placeholder="Your AI-generated prompt will appear here..."
+                                      className="pr-10 bg-background/50 border-border/30 h-full resize-none text-base"
                                     />
                                     {item.prompt && (
                                       <Button
@@ -277,7 +278,7 @@ export default function PromptGenerator() {
                           )}
                         </div>
                       ) : (
-                        <div className="flex flex-col justify-center items-center h-full text-center">
+                        <div className="flex flex-col justify-center items-center text-center min-h-[180px]">
                           <p className="text-muted-foreground">This image couldn't be loaded. Please check the URL.</p>
                         </div>
                       )}
