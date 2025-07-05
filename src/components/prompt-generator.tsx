@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { generateImagePrompt } from '@/ai/flows/generate-image-prompt';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,52 @@ export default function PromptGenerator() {
     });
   };
 
+  const handleGenerateAllPrompts = () => {
+    startTransition(async () => {
+      setImageItems(prev => 
+        prev.map(item => item.isValid && !item.prompt ? { ...item, isGenerating: true, error: undefined } : item)
+      );
+
+      const itemsToProcess = imageItems.filter(item => item.isValid && !item.prompt);
+
+      const results = await Promise.all(
+        itemsToProcess.map(async (item) => {
+          try {
+            const result = await generateImagePrompt({ imageUrl: item.url });
+            return { id: item.id, prompt: result.prompt, error: undefined };
+          } catch (error) {
+            console.error(`Error generating prompt for ${item.url}:`, error);
+            return { id: item.id, prompt: undefined, error: "Failed to generate prompt." };
+          }
+        })
+      );
+
+      const hasErrors = results.some(r => r.error);
+      if (hasErrors) {
+        toast({
+            title: `Prompt Generation Failed`,
+            description: `Could not generate prompt for one or more images.`,
+            variant: "destructive",
+        });
+      }
+
+      setImageItems(prev => 
+        prev.map(item => {
+          const result = results.find(r => r.id === item.id);
+          if (result) {
+            return {
+              ...item,
+              isGenerating: false,
+              prompt: result.prompt,
+              error: result.error,
+            }
+          }
+          return item;
+        })
+      );
+    });
+  };
+
   const copyToClipboard = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -91,6 +137,11 @@ export default function PromptGenerator() {
         setCopiedId(null);
     }, 2000);
   };
+  
+  const canGenerateAll = useMemo(() => {
+    if (isProcessing) return false;
+    return imageItems.length > 0 && imageItems.some(item => item.isValid && !item.prompt);
+  }, [imageItems, isProcessing]);
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-10">
@@ -104,7 +155,8 @@ export default function PromptGenerator() {
         <CardContent>
           <Textarea
             id="image-urls"
-            placeholder="https://placehold.co/600x400.png&#10;https://placehold.co/800x600.png"
+            placeholder="https://placehold.co/600x400.png
+https://placehold.co/800x600.png"
             value={urlsInput}
             onChange={(e) => setUrlsInput(e.target.value)}
             rows={5}
@@ -120,7 +172,15 @@ export default function PromptGenerator() {
 
       {imageItems.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-3xl font-bold text-center font-headline">Your Images & Prompts</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-3xl font-bold font-headline">Your Images & Prompts</h2>
+            {canGenerateAll && (
+              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing}>
+                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                Generate All Prompts
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {imageItems.map((item) => (
               <Card key={item.id} className="flex flex-col shadow-md hover:shadow-xl transition-shadow duration-300">
@@ -175,7 +235,7 @@ export default function PromptGenerator() {
                       ) : (
                         <Button
                           onClick={() => handleGeneratePrompt(item.id)}
-                          disabled={item.isGenerating}
+                          disabled={isProcessing}
                           className="w-full mt-auto"
                         >
                            <Wand2 className="mr-2 h-4 w-4" />
