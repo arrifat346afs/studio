@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { generateImagePrompt } from '@/ai/flows/generate-image-prompt';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -202,79 +202,83 @@ export default function PromptGenerator() {
           <Carousel opts={{ align: "start" }} className="w-full">
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
-                <CarouselItem key={item.id} className="md:basis-1/2 pl-4">
-                  <Card className="group relative overflow-hidden rounded-xl border-border/50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 w-full">
-                    <div className="flex flex-row h-[300px]">
-                      <div className="w-1/2 relative bg-muted/50 flex items-center justify-center overflow-hidden border-r">
-                        {item.isValid ? (
-                          <Image
-                            src={item.url}
-                            alt="User provided image"
-                            fill
-                            className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            onError={() => handleImageError(item.id)}
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center text-destructive p-4">
-                            <AlertCircle className="h-8 w-8" />
-                            <p className="mt-2 text-sm font-semibold text-center">Invalid Image or URL</p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="w-1/2 p-4 sm:p-6 flex flex-col">
-                        {item.isValid && (
-                          <div className="flex-grow flex flex-col">
-                            {item.isGenerating ? (
-                              <div className="flex flex-col items-center justify-center flex-grow space-y-3 bg-muted/30 rounded-lg p-4 my-auto">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <span className="text-muted-foreground font-semibold">Generating...</span>
+                <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
+                  <Card className="group relative overflow-hidden rounded-xl border-border/50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 w-full flex flex-col">
+                    <CardHeader className="p-0 border-b relative h-[220px] overflow-hidden">
+                      {item.isValid ? (
+                        <Image
+                          src={item.url}
+                          alt="User provided image"
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          onError={() => handleImageError(item.id)}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-destructive p-4">
+                          <AlertCircle className="h-8 w-8" />
+                          <p className="mt-2 text-sm font-semibold text-center">Invalid Image or URL</p>
+                        </div>
+                      )}
+                    </CardHeader>
+
+                    <CardContent className="p-4 sm:p-6 flex flex-col flex-grow min-h-[240px]">
+                      {item.isValid ? (
+                        <div className="flex-grow flex flex-col justify-between">
+                          {item.isGenerating ? (
+                            <div className="flex flex-col items-center justify-center flex-grow space-y-3">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                              <span className="text-muted-foreground font-semibold">Generating...</span>
+                            </div>
+                          ) : item.prompt ? (
+                            <div className="space-y-3 flex-grow flex flex-col">
+                              <Label className="text-base font-semibold flex items-center gap-2 text-foreground/90">
+                                <Wand2 className="h-5 w-5 text-primary" />
+                                Generated Prompt
+                              </Label>
+                              <div className="relative flex-grow">
+                                <Textarea
+                                  readOnly
+                                  value={item.prompt}
+                                  className="pr-10 bg-secondary/50 h-full resize-none text-sm"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-foreground"
+                                  onClick={() => copyToClipboard(item.id, item.prompt!)}
+                                >
+                                  {copiedId === item.id ? <Check className="h-4 w-4 text-accent" /> : <Clipboard className="h-4 w-4" />}
+                                </Button>
                               </div>
-                            ) : item.prompt ? (
-                              <div className="space-y-2 flex-grow flex flex-col">
-                                <Label className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                                  <Wand2 className="h-5 w-5 text-primary" />
-                                  Generated Prompt
-                                </Label>
-                                <div className="relative flex-grow">
-                                  <Textarea
-                                    readOnly
-                                    value={item.prompt}
-                                    className="pr-10 bg-secondary/50 h-full resize-none text-base"
-                                  />
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-foreground"
-                                    onClick={() => copyToClipboard(item.id, item.prompt!)}
-                                  >
-                                    {copiedId === item.id ? <Check className="h-4 w-4 text-accent" /> : <Clipboard className="h-4 w-4" />}
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col justify-center items-center h-full">
-                                  <Button
-                                    onClick={() => handleGeneratePrompt(item.id)}
-                                    disabled={isProcessing}
-                                    className="w-full"
-                                    size="lg"
-                                  >
-                                    <Wand2 className="mr-2 h-5 w-5" />
-                                    Generate Prompt
-                                  </Button>
-                              </div>
-                            )}
-                            {item.error && (
-                              <p className="text-sm text-destructive mt-2 flex items-center gap-2">
-                                <AlertCircle className="h-4 w-4" />
-                                {item.error}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col justify-center items-center h-full text-center">
+                                <p className="text-muted-foreground mb-4 flex-grow flex items-center">Your generated prompt will appear here.</p>
+                                <Button
+                                  onClick={() => handleGeneratePrompt(item.id)}
+                                  disabled={isProcessing}
+                                  className="w-full"
+                                  size="lg"
+                                >
+                                  <Wand2 className="mr-2 h-5 w-5" />
+                                  Generate Prompt
+                                </Button>
+                            </div>
+                          )}
+                          {item.error && (
+                            <p className="text-sm text-destructive mt-2 flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4" />
+                              {item.error}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col justify-center items-center h-full text-center">
+                          <p className="text-muted-foreground">This image couldn't be loaded. Please check the URL.</p>
+                        </div>
+                      )}
+                    </CardContent>
                   </Card>
                 </CarouselItem>
               ))}
