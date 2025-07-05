@@ -37,7 +37,7 @@ Based on your analysis, provide the following in the specified JSON format:
 1.  **prompt**: A detailed and descriptive text prompt suitable for AI image generation models like DALL-E, Midjourney, or Stable Diffusion. This should capture the visual and stylistic essence of the image.
 2.  **tags**: Generate a list of 5-7 relevant keywords or tags that describe the image's style, subject, content, and mood (e.g., "photorealistic", "portrait", "dark lighting", "vibrant colors", "close-up").
 `;
-
+//i hope it worked
 export async function generateImagePrompt(input: GenerateImagePromptInput): Promise<GenerateImagePromptOutput> {
   // If an API key is provided, create a temporary Genkit instance with it.
   // Otherwise, use the default flow (which may use a server-side key).
