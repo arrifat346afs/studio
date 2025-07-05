@@ -4,12 +4,12 @@ import { useState, useTransition, useMemo } from 'react';
 import { generateImagePrompt } from '@/ai/flows/generate-image-prompt';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check, Link } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 type ImageItem = {
@@ -156,16 +156,13 @@ export default function PromptGenerator() {
   }, [imageItems, isProcessing]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-12 py-10 px-4">
-      <Card className="shadow-xl border-border/50">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline tracking-tight">Unleash Your Creativity</CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">
-            Paste an image URL to magically generate an AI art prompt.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex w-full max-w-2xl items-center space-x-2">
+    <div className="w-full max-w-7xl mx-auto space-y-10 md:space-y-16 py-8 md:py-12 px-4">
+      <section className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Transform Images into Masterpiece Prompts</h2>
+          <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
+            Simply paste an image URL below and let our AI craft a detailed, creative prompt for you.
+          </p>
+          <div className="flex w-full max-w-lg mx-auto items-center space-x-2 mt-8">
             <Input
               id="image-url"
               type="url"
@@ -178,22 +175,21 @@ export default function PromptGenerator() {
                   handleAddUrl();
                 }
               }}
-              className="text-base h-11"
+              className="text-base h-12 shadow-sm"
             />
-            <Button onClick={handleAddUrl} disabled={isProcessing || urlInput.trim() === ''} size="lg">
-              <Link className="mr-2 h-5 w-5" />
+            <Button onClick={handleAddUrl} disabled={isProcessing || urlInput.trim() === ''} size="lg" className="shadow-lg hover:shadow-primary/40 transition-shadow">
+              <Sparkles className="mr-2 h-5 w-5" />
               Add Image
             </Button>
           </div>
-        </CardContent>
-      </Card>
+      </section>
 
       {imageItems.length > 0 && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold font-headline">Your Images & Prompts</h2>
+            <h2 className="text-2xl md:text-3xl font-bold">Your Gallery</h2>
             {canGenerateAll && (
-              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg">
+              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg" variant="outline">
                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
                 Generate All
               </Button>
@@ -203,8 +199,8 @@ export default function PromptGenerator() {
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
                 <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
-                  <Card className="group relative overflow-hidden rounded-xl bg-card border border-border/20 shadow-lg transition-all duration-300 hover:shadow-primary/20 hover:-translate-y-1 w-full flex flex-col">
-                    <CardHeader className="p-0 border-b border-border/20 relative h-[220px] overflow-hidden">
+                  <Card className="group relative overflow-hidden rounded-xl bg-card border-2 border-transparent hover:border-primary transition-all duration-300 w-full flex flex-col">
+                    <CardHeader className="p-0 border-b relative h-[220px] overflow-hidden">
                       {item.isValid ? (
                         <Image
                           src={item.url}
@@ -243,7 +239,7 @@ export default function PromptGenerator() {
                                       readOnly
                                       value={item.prompt || ''}
                                       placeholder="Your AI-generated prompt will appear here..."
-                                      className="pr-10 bg-background/50 border-border/30 h-full resize-none text-base"
+                                      className="pr-10 bg-muted/50 h-full resize-none text-base"
                                     />
                                     {item.prompt && (
                                       <Button
