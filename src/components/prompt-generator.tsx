@@ -9,14 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags } from 'lucide-react';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 type ImageItem = {
   id: string;
   url: string;
   isValid: boolean;
   prompt?: string;
+  tags?: string[];
   isGenerating: boolean;
   error?: string;
 };
@@ -76,7 +78,7 @@ export default function PromptGenerator() {
         const result = await generateImagePrompt({ imageUrl: itemToProcess.url });
         setImageItems(prev =>
           prev.map(item =>
-            item.id === id ? { ...item, prompt: result.prompt, isGenerating: false } : item
+            item.id === id ? { ...item, prompt: result.prompt, tags: result.tags, isGenerating: false } : item
           )
         );
       } catch (error) {
@@ -108,10 +110,10 @@ export default function PromptGenerator() {
         itemsToProcess.map(async (item) => {
           try {
             const result = await generateImagePrompt({ imageUrl: item.url });
-            return { id: item.id, prompt: result.prompt, error: undefined };
+            return { id: item.id, prompt: result.prompt, tags: result.tags, error: undefined };
           } catch (error) {
             console.error(`Error generating prompt for ${item.url}:`, error);
-            return { id: item.id, prompt: undefined, error: "Failed to generate prompt." };
+            return { id: item.id, prompt: undefined, tags: undefined, error: "Failed to generate prompt." };
           }
         })
       );
@@ -133,6 +135,7 @@ export default function PromptGenerator() {
               ...item,
               isGenerating: false,
               prompt: result.prompt,
+              tags: result.tags,
               error: result.error,
             }
           }
@@ -160,7 +163,7 @@ export default function PromptGenerator() {
       <section className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Transform Images into Masterpiece Prompts</h2>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-            Simply paste an image URL below and let our AI craft a detailed, creative prompt for you.
+            Simply paste an image URL below and let our AI analyze it and craft a detailed, creative prompt for you.
           </p>
           <div className="flex w-full max-w-lg mx-auto items-center space-x-2 mt-8">
             <Input
@@ -220,26 +223,41 @@ export default function PromptGenerator() {
 
                     <CardContent className="p-4 flex flex-col flex-grow">
                       {item.isValid ? (
-                        <div className="flex-grow flex flex-col justify-between gap-4">
+                        <div className="flex-grow flex flex-col gap-4">
                           {item.isGenerating ? (
-                            <div className="flex flex-col items-center justify-center flex-grow space-y-3 min-h-[180px]">
+                            <div className="flex flex-col items-center justify-center flex-grow space-y-3 min-h-[220px]">
                               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <span className="text-muted-foreground font-semibold">Generating...</span>
+                              <span className="text-muted-foreground font-semibold">Analyzing & Generating...</span>
                             </div>
                           ) : (
-                            <div className="flex flex-col flex-grow justify-between min-h-[180px]">
-                                <div className="space-y-2 flex-grow flex flex-col">
+                            <div className="flex flex-col flex-grow justify-between gap-4">
+                              <div className="space-y-4">
+                                {item.prompt && item.tags && item.tags.length > 0 && (
+                                  <div className="space-y-2">
+                                    <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
+                                      <Tags className="h-3 w-3" />
+                                      Analysis
+                                    </Label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {item.tags.map((tag, index) => (
+                                        <Badge key={index} variant="secondary" className="text-xs font-normal">{tag}</Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                <div className="space-y-2">
                                   <Label htmlFor={`prompt-${item.id}`} className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
-                                    <Wand2 className="h-4 w-4" />
+                                    <Wand2 className="h-3 w-3" />
                                     Generated Prompt
                                   </Label>
-                                  <div className="relative flex-grow">
+                                  <div className="relative">
                                     <Textarea
                                       id={`prompt-${item.id}`}
                                       readOnly
                                       value={item.prompt || ''}
-                                      placeholder="Your AI-generated prompt will appear here..."
-                                      className="pr-10 bg-muted/50 h-full resize-none text-base"
+                                      placeholder="Click 'Generate Prompt' below..."
+                                      className="pr-10 bg-muted/50 resize-none text-sm min-h-[100px]"
                                     />
                                     {item.prompt && (
                                       <Button
@@ -253,17 +271,19 @@ export default function PromptGenerator() {
                                     )}
                                   </div>
                                 </div>
-                                {!item.prompt && (
-                                  <Button
-                                    onClick={() => handleGeneratePrompt(item.id)}
-                                    disabled={isProcessing}
-                                    className="w-full mt-4"
-                                    size="lg"
-                                  >
-                                    <Wand2 className="mr-2 h-5 w-5" />
-                                    Generate Prompt
-                                  </Button>
-                                )}
+                              </div>
+
+                              {!item.prompt && (
+                                <Button
+                                  onClick={() => handleGeneratePrompt(item.id)}
+                                  disabled={isProcessing}
+                                  className="w-full mt-auto"
+                                  size="lg"
+                                >
+                                  <Wand2 className="mr-2 h-5 w-5" />
+                                  Generate Prompt
+                                </Button>
+                              )}
                             </div>
                           )}
                           {item.error && (
@@ -274,7 +294,7 @@ export default function PromptGenerator() {
                           )}
                         </div>
                       ) : (
-                        <div className="flex flex-col justify-center items-center text-center min-h-[180px]">
+                        <div className="flex flex-col justify-center items-center text-center flex-grow">
                           <p className="text-muted-foreground">This image couldn't be loaded. Please check the URL.</p>
                         </div>
                       )}
