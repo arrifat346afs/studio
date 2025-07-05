@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 
@@ -158,6 +158,44 @@ export default function PromptGenerator() {
     return imageItems.length > 0 && imageItems.some(item => item.isValid && !item.prompt);
   }, [imageItems, isProcessing]);
 
+  const canExport = useMemo(() => {
+    if (isProcessing) return false;
+    return imageItems.length > 0 && imageItems.some(item => !!item.prompt);
+  }, [imageItems, isProcessing]);
+
+  const handleExportPrompts = () => {
+    const promptsToExport = imageItems
+      .filter(item => item.isValid && item.prompt)
+      .map(item => item.prompt);
+
+    if (promptsToExport.length === 0) {
+      toast({
+        title: "No Prompts to Export",
+        description: "Generate at least one prompt before exporting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const fileContent = promptsToExport.join('\n');
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'prompts.txt');
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    toast({
+        title: "Prompts Exported",
+        description: `Your prompts have been downloaded as prompts.txt.`,
+    });
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-10 md:space-y-16 py-8 md:py-12 px-4">
       <section className="text-center">
@@ -191,12 +229,20 @@ export default function PromptGenerator() {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl md:text-3xl font-bold">Your Gallery</h2>
-            {canGenerateAll && (
-              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg" variant="outline">
-                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
-                Generate All
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {canExport && (
+                <Button onClick={handleExportPrompts} disabled={isProcessing} size="lg" variant="outline">
+                  <Download className="mr-2 h-5 w-5" />
+                  Export
+                </Button>
+              )}
+              {canGenerateAll && (
+                <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg" variant="outline">
+                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
+                  Generate All
+                </Button>
+              )}
+            </div>
           </div>
           <Carousel opts={{ align: "start" }} className="w-full">
             <CarouselContent className="-ml-4">
