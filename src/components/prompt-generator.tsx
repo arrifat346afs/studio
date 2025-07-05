@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
 type ImageItem = {
@@ -144,12 +144,12 @@ export default function PromptGenerator() {
   }, [imageItems, isProcessing]);
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-10">
-      <Card className="shadow-lg">
+    <div className="w-full max-w-6xl mx-auto space-y-12 py-10">
+      <Card className="shadow-xl border-border/50">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Image URL Input</CardTitle>
-          <CardDescription>
-            Paste one or more image URLs below, one per line. We'll work our magic to generate AI art prompts.
+          <CardTitle className="text-3xl font-headline tracking-tight">Unleash Your Creativity</CardTitle>
+          <CardDescription className="text-lg text-muted-foreground">
+            Paste image URLs to magically generate AI art prompts. One URL per line.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -160,11 +160,12 @@ https://placehold.co/800x600.png"
             value={urlsInput}
             onChange={(e) => setUrlsInput(e.target.value)}
             rows={5}
+            className="text-base"
           />
         </CardContent>
         <CardFooter>
-          <Button onClick={handleProcessUrls} disabled={isProcessing || urlsInput.trim() === ''}>
-            {(isProcessing && imageItems.length === 0) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button onClick={handleProcessUrls} disabled={isProcessing || urlsInput.trim() === ''} size="lg">
+            {(isProcessing && imageItems.length === 0) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ImageIcon className="mr-2 h-5 w-5" />}
             Process Images
           </Button>
         </CardFooter>
@@ -175,23 +176,23 @@ https://placehold.co/800x600.png"
           <div className="flex justify-between items-center">
             <h2 className="text-3xl font-bold font-headline">Your Images & Prompts</h2>
             {canGenerateAll && (
-              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing}>
-                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                Generate All Prompts
+              <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg">
+                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
+                Generate All
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {imageItems.map((item) => (
-              <Card key={item.id} className="flex flex-col shadow-md hover:shadow-xl transition-shadow duration-300">
+              <Card key={item.id} className="group relative flex flex-col overflow-hidden rounded-xl border-border/50 shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
                 <CardContent className="p-4 flex-grow flex flex-col">
-                  <div className="aspect-video relative bg-muted rounded-md flex items-center justify-center overflow-hidden border">
+                  <div className="aspect-video relative bg-muted/50 rounded-lg flex items-center justify-center overflow-hidden border">
                     {item.isValid ? (
                       <Image
                         src={item.url}
                         alt="User provided image"
                         fill
-                        className="object-cover transition-transform duration-300 hover:scale-105"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
                         onError={() => handleImageError(item.id)}
                         unoptimized
                       />
@@ -206,13 +207,13 @@ https://placehold.co/800x600.png"
                   {item.isValid && (
                     <div className="mt-4 flex-grow flex flex-col">
                       {item.isGenerating ? (
-                        <div className="flex items-center justify-center p-4 bg-muted rounded-md my-auto">
-                          <Loader2 className="mr-3 h-6 w-6 animate-spin text-primary" />
-                          <span className="text-muted-foreground font-medium">Generating...</span>
+                        <div className="flex flex-col items-center justify-center flex-grow space-y-3 bg-muted/30 rounded-lg p-4 my-auto">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <span className="text-muted-foreground font-semibold">Generating...</span>
                         </div>
                       ) : item.prompt ? (
                         <div className="space-y-2 flex-grow flex flex-col">
-                          <Label className="text-base font-semibold flex items-center gap-2">
+                          <Label className="text-lg font-semibold flex items-center gap-2 text-foreground/90">
                             <Wand2 className="h-5 w-5 text-primary" />
                             Generated Prompt
                           </Label>
@@ -220,7 +221,7 @@ https://placehold.co/800x600.png"
                             <Textarea
                               readOnly
                               value={item.prompt}
-                              className="pr-10 bg-secondary h-full resize-none"
+                              className="pr-10 bg-secondary/50 h-full resize-none text-base"
                             />
                             <Button
                               variant="ghost"
@@ -237,8 +238,9 @@ https://placehold.co/800x600.png"
                           onClick={() => handleGeneratePrompt(item.id)}
                           disabled={isProcessing}
                           className="w-full mt-auto"
+                          size="lg"
                         >
-                           <Wand2 className="mr-2 h-4 w-4" />
+                           <Wand2 className="mr-2 h-5 w-5" />
                           Generate Prompt
                         </Button>
                       )}
