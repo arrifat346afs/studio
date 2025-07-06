@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useRef, useEffect } from 'react';
 import { generateImagePrompt } from '@/ai/flows/generate-image-prompt';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,32 @@ export default function PromptGenerator() {
   const [isProcessing, startTransition] = useTransition();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
+  const [api, setApi] = useState<CarouselApi>();
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const carouselElement = carouselRef.current;
+    if (!carouselElement || !api) {
+      return;
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        if (e.deltaY > 0) {
+          api.scrollNext();
+        } else {
+          api.scrollPrev();
+        }
+      }
+    };
+
+    carouselElement.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      carouselElement.removeEventListener('wheel', onWheel);
+    };
+  }, [api]);
 
   const handleAddUrl = () => {
     const url = urlInput.trim();
@@ -248,7 +274,7 @@ export default function PromptGenerator() {
               )}
             </div>
           </div>
-          <Carousel opts={{ align: "start" }} className="w-full">
+          <Carousel ref={carouselRef} setApi={setApi} opts={{ align: "start" }} className="w-full">
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
                 <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
