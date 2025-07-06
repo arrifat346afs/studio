@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 type ImageItem = {
   id: string;
@@ -33,6 +34,8 @@ export default function PromptGenerator() {
   const { toast } = useToast();
   const [api, setApi] = useState<CarouselApi>();
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const carouselElement = carouselRef.current;
@@ -129,49 +132,59 @@ export default function PromptGenerator() {
 
   const handleGenerateAllPrompts = () => {
     startTransition(async () => {
-      setImageItems(prev => 
-        prev.map(item => item.isValid && !item.prompt ? { ...item, isGenerating: true, error: undefined } : item)
-      );
-
+      setIsBatchGenerating(true);
+      setProgress(0);
+  
       const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
       const itemsToProcess = imageItems.filter(item => item.isValid && !item.prompt);
-
-      const results = await Promise.all(
-        itemsToProcess.map(async (item) => {
-          try {
-            const result = await generateImagePrompt({ imageUrl: item.url, apiKey: apiKey || undefined });
-            return { id: item.id, prompt: result.prompt, tags: result.tags, error: undefined };
-          } catch (error) {
-            console.error(`Error generating prompt for ${item.url}:`, error);
-            return { id: item.id, prompt: undefined, tags: undefined, error: "Failed to generate prompt." };
-          }
-        })
+      const totalItems = itemsToProcess.length;
+  
+      if (totalItems === 0) {
+        setIsBatchGenerating(false);
+        return;
+      }
+      
+      const itemsToProcessIds = new Set(itemsToProcess.map(i => i.id));
+      setImageItems(prev =>
+        prev.map(item =>
+          itemsToProcessIds.has(item.id) ? { ...item, isGenerating: true, error: undefined } : item
+        )
       );
-
-      const hasErrors = results.some(r => r.error);
+      
+      let processedCount = 0;
+      let hasErrors = false;
+  
+      for (const item of itemsToProcess) {
+        try {
+          const result = await generateImagePrompt({ imageUrl: item.url, apiKey: apiKey || undefined });
+          setImageItems(prev =>
+            prev.map(i =>
+              i.id === item.id ? { ...i, prompt: result.prompt, tags: result.tags, isGenerating: false } : i
+            )
+          );
+        } catch (error) {
+          hasErrors = true;
+          console.error(`Error generating prompt for ${item.url}:`, error);
+          setImageItems(prev =>
+            prev.map(i =>
+              i.id === item.id ? { ...i, isGenerating: false, error: "Failed to generate prompt." } : i
+            )
+          );
+        }
+        processedCount++;
+        setProgress((processedCount / totalItems) * 100);
+      }
+      
       if (hasErrors) {
         toast({
-            title: `Prompt Generation Failed`,
-            description: `Could not generate prompt for one or more images.`,
+            title: `Prompt Generation Complete`,
+            description: `Could not generate prompts for one or more images.`,
             variant: "destructive",
         });
       }
-
-      setImageItems(prev => 
-        prev.map(item => {
-          const result = results.find(r => r.id === item.id);
-          if (result) {
-            return {
-              ...item,
-              isGenerating: false,
-              prompt: result.prompt,
-              tags: result.tags,
-              error: result.error,
-            }
-          }
-          return item;
-        })
-      );
+  
+      setIsBatchGenerating(false);
+      setTimeout(() => setProgress(0), 1000);
     });
   };
 
@@ -268,12 +281,18 @@ export default function PromptGenerator() {
               )}
               {canGenerateAll && (
                 <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg" variant="outline">
-                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
+                  {isProcessing && isBatchGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
                   Generate All
                 </Button>
               )}
             </div>
           </div>
+          {isBatchGenerating && (
+            <div className="space-y-2 pt-4">
+              <Progress value={progress} className="w-full" />
+              <p className="text-sm text-muted-foreground text-center">Generating prompts... {Math.round(progress)}%</p>
+            </div>
+          )}
           <Carousel ref={carouselRef} setApi={setApi} opts={{ align: "start" }} className="w-full">
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
@@ -349,17 +368,29 @@ export default function PromptGenerator() {
                                 </div>
                               </div>
 
-                              {!item.prompt && (
-                                <Button
-                                  onClick={() => handleGeneratePrompt(item.id)}
-                                  disabled={isProcessing}
-                                  className="w-full mt-auto"
-                                  size="lg"
-                                >
-                                  <Wand2 className="mr-2 h-5 w-5" />
-                                  Generate Prompt
-                                </Button>
-                              )}
+                              <div className="mt-auto">
+                                {item.prompt ? (
+                                    <Button
+                                        onClick={() => handleGeneratePrompt(item.id)}
+                                        disabled={isProcessing}
+                                        variant="outline"
+                                        className="w-full"
+                                    >
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Regenerate Prompt
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => handleGeneratePrompt(item.id)}
+                                        disabled={isProcessing}
+                                        className="w-full"
+                                        size="lg"
+                                    >
+                                        <Wand2 className="mr-2 h-5 w-5" />
+                                        Generate Prompt
+                                    </Button>
+                                )}
+                              </div>
                             </div>
                           )}
                           {item.error && (
