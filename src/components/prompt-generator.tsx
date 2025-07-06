@@ -130,69 +130,67 @@ export default function PromptGenerator() {
     });
   };
 
-  const handleGenerateAllPrompts = () => {
-    startTransition(async () => {
-      setIsBatchGenerating(true);
-      setProgress(0);
-  
-      const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-      const itemsToProcess = imageItems.filter(item => item.isValid && !item.prompt);
-      const totalItems = itemsToProcess.length;
-  
-      if (totalItems === 0) {
-        setIsBatchGenerating(false);
-        return;
-      }
-      
-      const itemsToProcessIds = new Set(itemsToProcess.map(i => i.id));
-      setImageItems(prev =>
-        prev.map(item =>
-          itemsToProcessIds.has(item.id) ? { ...item, isGenerating: true, error: undefined } : item
-        )
-      );
-      
-      let processedCount = 0;
-      let hasErrors = false;
+  const handleGenerateAllPrompts = async () => {
+    setIsBatchGenerating(true);
+    setProgress(0);
 
-      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-  
-      for (const item of itemsToProcess) {
-        try {
-          const result = await generateImagePrompt({ imageUrl: item.url, apiKey: apiKey || undefined });
-          setImageItems(prev =>
-            prev.map(i =>
-              i.id === item.id ? { ...i, prompt: result.prompt, tags: result.tags, isGenerating: false } : i
-            )
-          );
-        } catch (error) {
-          hasErrors = true;
-          console.error(`Error generating prompt for ${item.url}:`, error);
-          setImageItems(prev =>
-            prev.map(i =>
-              i.id === item.id ? { ...i, isGenerating: false, error: "API error. Try again." } : i
-            )
-          );
-        }
-        processedCount++;
-        setProgress((processedCount / totalItems) * 100);
+    const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    const itemsToProcess = imageItems.filter(item => item.isValid && !item.prompt);
+    const totalItems = itemsToProcess.length;
 
-        // Add a delay to respect API rate limits (15 RPM for free tier)
-        if (processedCount < totalItems) {
-          await sleep(4100); // 60s / 15 req = 4s/req. 4100ms adds a small buffer.
-        }
-      }
-      
-      if (hasErrors) {
-        toast({
-            title: `Batch Generation Finished`,
-            description: `Could not generate prompts for one or more images. Please check cards for errors.`,
-            variant: "destructive",
-        });
-      }
-  
+    if (totalItems === 0) {
       setIsBatchGenerating(false);
-      setTimeout(() => setProgress(0), 1000);
-    });
+      return;
+    }
+    
+    const itemsToProcessIds = new Set(itemsToProcess.map(i => i.id));
+    setImageItems(prev =>
+      prev.map(item =>
+        itemsToProcessIds.has(item.id) ? { ...item, isGenerating: true, error: undefined } : item
+      )
+    );
+    
+    let processedCount = 0;
+    let hasErrors = false;
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (const item of itemsToProcess) {
+      try {
+        const result = await generateImagePrompt({ imageUrl: item.url, apiKey: apiKey || undefined });
+        setImageItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? { ...i, prompt: result.prompt, tags: result.tags, isGenerating: false } : i
+          )
+        );
+      } catch (error) {
+        hasErrors = true;
+        console.error(`Error generating prompt for ${item.url}:`, error);
+        setImageItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? { ...i, isGenerating: false, error: "API error. Try again." } : i
+          )
+        );
+      }
+      processedCount++;
+      setProgress((processedCount / totalItems) * 100);
+
+      // Add a delay to respect API rate limits (15 RPM for free tier)
+      if (processedCount < totalItems) {
+        await sleep(4100); // 60s / 15 req = 4s/req. 4100ms adds a small buffer.
+      }
+    }
+    
+    if (hasErrors) {
+      toast({
+          title: `Batch Generation Finished`,
+          description: `Could not generate prompts for one or more images. Please check cards for errors.`,
+          variant: "destructive",
+      });
+    }
+
+    setIsBatchGenerating(false);
+    setTimeout(() => setProgress(0), 1000);
   };
 
   const copyToClipboard = (id: string, text: string) => {
@@ -204,14 +202,12 @@ export default function PromptGenerator() {
   };
   
   const canGenerateAll = useMemo(() => {
-    if (isProcessing) return false;
-    return imageItems.length > 0 && imageItems.some(item => item.isValid && !item.prompt);
-  }, [imageItems, isProcessing]);
+    return imageItems.some(item => item.isValid && !item.prompt);
+  }, [imageItems]);
 
   const canExport = useMemo(() => {
-    if (isProcessing) return false;
-    return imageItems.length > 0 && imageItems.some(item => !!item.prompt);
-  }, [imageItems, isProcessing]);
+    return imageItems.some(item => !!item.prompt);
+  }, [imageItems]);
 
   const handleExportPrompts = () => {
     const promptsToExport = imageItems
@@ -245,6 +241,8 @@ export default function PromptGenerator() {
         description: `Your prompts have been downloaded as prompts.txt.`,
     });
   };
+  
+  const anyProcessRunning = isProcessing || isBatchGenerating;
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-10 md:space-y-16 py-8 md:py-12 px-4">
@@ -266,9 +264,10 @@ export default function PromptGenerator() {
                   handleAddUrl();
                 }
               }}
+              disabled={anyProcessRunning}
               className="text-base h-12 shadow-sm"
             />
-            <Button onClick={handleAddUrl} disabled={isProcessing || urlInput.trim() === ''} size="lg" className="shadow-lg hover:shadow-primary/40 transition-shadow">
+            <Button onClick={handleAddUrl} disabled={anyProcessRunning || urlInput.trim() === ''} size="lg" className="shadow-lg hover:shadow-primary/40 transition-shadow">
               <Sparkles className="mr-2 h-5 w-5" />
               Add Image
             </Button>
@@ -281,14 +280,14 @@ export default function PromptGenerator() {
             <h2 className="text-2xl md:text-3xl font-bold">Your Gallery</h2>
             <div className="flex items-center gap-2">
               {canExport && (
-                <Button onClick={handleExportPrompts} disabled={isProcessing} size="lg" variant="outline">
+                <Button onClick={handleExportPrompts} disabled={anyProcessRunning} size="lg" variant="outline">
                   <Download className="mr-2 h-5 w-5" />
                   Export
                 </Button>
               )}
               {canGenerateAll && (
-                <Button onClick={handleGenerateAllPrompts} disabled={isProcessing} size="lg" variant="outline">
-                  {isProcessing && isBatchGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
+                <Button onClick={handleGenerateAllPrompts} disabled={anyProcessRunning} size="lg" variant="outline">
+                  {isBatchGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-5 w-5" />}
                   Generate All
                 </Button>
               )}
@@ -379,7 +378,7 @@ export default function PromptGenerator() {
                                 {item.prompt ? (
                                     <Button
                                         onClick={() => handleGeneratePrompt(item.id)}
-                                        disabled={isProcessing}
+                                        disabled={anyProcessRunning}
                                         variant="outline"
                                         className="w-full"
                                     >
@@ -389,7 +388,7 @@ export default function PromptGenerator() {
                                 ) : (
                                     <Button
                                         onClick={() => handleGeneratePrompt(item.id)}
-                                        disabled={isProcessing}
+                                        disabled={anyProcessRunning}
                                         className="w-full"
                                         size="lg"
                                     >
