@@ -153,6 +153,8 @@ export default function PromptGenerator() {
       
       let processedCount = 0;
       let hasErrors = false;
+
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   
       for (const item of itemsToProcess) {
         try {
@@ -167,18 +169,23 @@ export default function PromptGenerator() {
           console.error(`Error generating prompt for ${item.url}:`, error);
           setImageItems(prev =>
             prev.map(i =>
-              i.id === item.id ? { ...i, isGenerating: false, error: "Failed to generate prompt." } : i
+              i.id === item.id ? { ...i, isGenerating: false, error: "API error. Try again." } : i
             )
           );
         }
         processedCount++;
         setProgress((processedCount / totalItems) * 100);
+
+        // Add a delay to respect API rate limits (15 RPM for free tier)
+        if (processedCount < totalItems) {
+          await sleep(4100); // 60s / 15 req = 4s/req. 4100ms adds a small buffer.
+        }
       }
       
       if (hasErrors) {
         toast({
-            title: `Prompt Generation Complete`,
-            description: `Could not generate prompts for one or more images.`,
+            title: `Batch Generation Finished`,
+            description: `Could not generate prompts for one or more images. Please check cards for errors.`,
             variant: "destructive",
         });
       }
