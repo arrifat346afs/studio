@@ -247,10 +247,6 @@ export default function PromptGenerator() {
   return (
     <div className="w-full max-w-7xl mx-auto space-y-10 md:space-y-16 py-8 md:py-12 px-4">
       <section className="text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Transform Images into Masterpiece Prompts</h2>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-            Simply paste an image URL below and let our AI analyze it and craft a detailed, creative prompt for you.
-          </p>
           <div className="flex w-full max-w-lg mx-auto items-center space-x-2 mt-8">
             <Input
               id="image-url"
