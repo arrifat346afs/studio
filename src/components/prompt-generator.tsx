@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
-import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download, RefreshCw } from 'lucide-react';
+import { Clipboard, Loader2, AlertCircle, Wand2, Check, Sparkles, Tags, Download, RefreshCw, X } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -94,6 +94,10 @@ export default function PromptGenerator() {
     setImageItems(prev =>
       prev.map(item => (item.id === id ? { ...item, isValid: false } : item))
     );
+  };
+  
+  const handleRemoveItem = (id: string) => {
+    setImageItems(prev => prev.filter(item => item.id !== id));
   };
   
   const handleGeneratePrompt = (id: string) => {
@@ -261,11 +265,11 @@ export default function PromptGenerator() {
                 }
               }}
               disabled={anyProcessRunning}
-              className="text-base h-12 shadow-sm"
+              className="h-12"
             />
             <Button onClick={handleAddUrl} disabled={anyProcessRunning || urlInput.trim() === ''} size="lg" className="shadow-lg hover:shadow-primary/40 transition-shadow">
               <Sparkles className="mr-2 h-5 w-5" />
-              Add Image
+              Add Url
             </Button>
           </div>
       </section>
@@ -304,7 +308,16 @@ export default function PromptGenerator() {
             <CarouselContent className="-ml-4">
               {imageItems.map((item) => (
                 <CarouselItem key={item.id} className="md:basis-1/2 lg:basis-1/3 pl-4">
-                  <Card className="group relative overflow-hidden rounded-xl bg-card border-2 border-transparent hover:border-primary transition-all duration-300 w-full flex flex-col">
+                  <Card className="group relative overflow-hidden rounded-xl  border-2 hover:border-primary transition-all duration-300 w-full flex flex-col">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 z-10 h-7 w-7 rounded-full bg-black/30 text-white hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleRemoveItem(item.id)}
+                      aria-label="Remove image"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                     <CardHeader className="p-0 border-b relative h-[220px] overflow-hidden">
                       {item.isValid ? (
                         <Image
