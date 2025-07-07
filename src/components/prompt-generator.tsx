@@ -277,7 +277,12 @@ export default function PromptGenerator() {
       {imageItems.length > 0 && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl md:text-3xl font-bold">Your Gallery</h2>
+            <div className="flex items-baseline gap-3">
+              <h2 className="text-2xl md:text-3xl font-bold">Your Gallery</h2>
+              <span className="font-mono text-lg text-muted-foreground">
+                {imageItems.length} image{imageItems.length !== 1 ? 's' : ''}
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               {canExport && (
                 <Button onClick={handleExportPrompts} disabled={anyProcessRunning} size="lg" variant="outline">
